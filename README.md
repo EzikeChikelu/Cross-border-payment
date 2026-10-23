@@ -4,7 +4,7 @@
 
 CrossBorder is an early-stage cross-border payment experience built around the Stellar network. It combines a polished transfer interface, indicative conversion previews, recipient details, and a real Freighter wallet authorization flow.
 
-> **Prototype only:** Do not use for real funds. The exchange rates, fees, balances, and activity shown in the interface are illustrative demo data. The current app can request Freighter access and read the public address, but it does not yet build, sign, or submit payment transactions. Fiat payouts and production FX require appropriate providers, compliance controls, and security review.
+> **Prototype only:** Do not use for real funds. The exchange rates, fees, balances, and activity shown in the interface are illustrative demo data. The app can request Freighter access, read a public address and Testnet balance, and submit native XLM payments to Stellar Testnet after explicit wallet signing. Transaction confirmation polling, production FX, and fiat payouts are not yet implemented. Fiat payouts and production FX require appropriate providers, compliance controls, and security review.
 
 ## Current features
 
@@ -12,6 +12,10 @@ CrossBorder is an early-stage cross-border payment experience built around the S
 - Transfer amount and destination currency controls
 - Indicative conversion and fee preview using clearly labelled demo rates
 - Real Freighter extension detection and authorization using `@stellar/freighter-api`
+- Live Stellar Testnet native XLM balance lookup after wallet connection
+- Testnet XLM payment builder with public-address validation and amount validation
+- Explicit Freighter transaction-signing approval before submission
+- Horizon Testnet submission and transaction explorer link
 - Wallet public address shown after connection
 - Sample activity feed with sent/received filters
 - Stellar Testnet environment labeling and safety messaging
