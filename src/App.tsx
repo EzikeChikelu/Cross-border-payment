@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { isConnected, requestAccess } from "@stellar/freighter-api";
+import { useEffect, useMemo, useState } from "react";
+import * as StellarSdk from "@stellar/stellar-sdk";
+import { isConnected, requestAccess, signTransaction } from "@stellar/freighter-api";
 import {
   ArrowDownLeft, ArrowDownUp, ArrowLeftRight, ArrowUpRight, Bell, Check,
   ChevronDown, CircleHelp, Globe2, LayoutDashboard,
@@ -32,6 +33,12 @@ function App() {
   const [notice, setNotice] = useState("");
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState("");
+  const [xlmBalance, setXlmBalance] = useState<string | null>(null);
+  const [balanceLoading, setBalanceLoading] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState("1");
+  const [paymentDestination, setPaymentDestination] = useState("");
+  const [paymentBusy, setPaymentBusy] = useState(false);
+  const [paymentHash, setPaymentHash] = useState("");
   const [mobileNav, setMobileNav] = useState(false);
   const [activityFilter, setActivityFilter] = useState("All activity");
   const [showAll, setShowAll] = useState(false);
@@ -49,6 +56,54 @@ function App() {
   const shownTransactions = transactions.filter(t => activityFilter === "All activity" || (activityFilter === "Sent" ? t.kind === "sent" : t.kind === "received")).slice(0, showAll ? 4 : 3);
 
   const flipCurrencies = () => { setFrom(to); setTo(from); };
+  const loadXlmBalance = async (address: string) => {
+    setBalanceLoading(true);
+    try {
+      const server = new StellarSdk.Horizon.Server("https://horizon-testnet.stellar.org");
+      const account = await server.loadAccount(address);
+      const native = account.balances.find((balance) => balance.asset_type === "native");
+      setXlmBalance(native && "balance" in native ? native.balance : "0");
+    } catch (error) {
+      setXlmBalance(null);
+      setNotice(error instanceof Error ? `Could not load Testnet balance: ${error.message}` : "Could not load Testnet balance.");
+    } finally {
+      setBalanceLoading(false);
+    }
+  };
+  useEffect(() => {
+    if (walletConnected && walletAddress) void loadXlmBalance(walletAddress);
+  }, [walletConnected, walletAddress]);
+  const sendTestnetPayment = async () => {
+    setPaymentHash("");
+    if (!walletConnected || !walletAddress) { setNotice("Connect Freighter before sending a Testnet payment."); return; }
+    if (!StellarSdk.StrKey.isValidEd25519PublicKey(paymentDestination.trim())) { setNotice("Enter a valid Stellar public address beginning with G."); return; }
+    const parsedAmount = Number(paymentAmount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0 || !/^\\d+(\\.\\d{1,7})?$/.test(paymentAmount.trim())) { setNotice("Enter an XLM amount greater than zero with up to 7 decimal places."); return; }
+    if (paymentDestination.trim() === walletAddress) { setNotice("Choose a different recipient address."); return; }
+    setPaymentBusy(true);
+    try {
+      const server = new StellarSdk.Horizon.Server("https://horizon-testnet.stellar.org");
+      const account = await server.loadAccount(walletAddress);
+      const tx = new StellarSdk.TransactionBuilder(account, { fee: StellarSdk.BASE_FEE, networkPassphrase: StellarSdk.Networks.TESTNET })
+        .addOperation(StellarSdk.Operation.payment({ destination: paymentDestination.trim(), asset: StellarSdk.Asset.native(), amount: parsedAmount.toFixed(7).replace(/\\.?0+$/, "") }))
+        .setTimeout(60)
+        .build();
+      setNotice("Review the payment details in Freighter. Nothing is submitted until you approve signing.");
+      const signed = await signTransaction(tx.toXDR(), { networkPassphrase: StellarSdk.Networks.TESTNET, address: walletAddress });
+      if (signed.error) throw new Error(signed.error.message);
+      if (!signed.signedTxXdr) throw new Error("Freighter did not return a signed transaction.");
+      const signedTx = StellarSdk.TransactionBuilder.fromXDR(signed.signedTxXdr, StellarSdk.Networks.TESTNET);
+      const submitted = await server.submitTransaction(signedTx);
+      setPaymentHash(submitted.hash);
+      setNotice("Testnet payment submitted successfully. Refreshing your balance.");
+      await loadXlmBalance(walletAddress);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "The payment could not be submitted.";
+      setNotice(message.toLowerCase().includes("rejected") || message.toLowerCase().includes("declined") ? "Payment signing was cancelled in Freighter. No payment was submitted." : `Testnet payment failed: ${message}`);
+    } finally {
+      setPaymentBusy(false);
+    }
+  };
   const startTransfer = () => {
     if (!walletConnected) { setNotice("Connect a compatible Stellar wallet before preparing a transfer."); return; }
     if (!recipient.trim()) { setShowRecipient(true); setNotice("Add the recipient's destination address to continue."); return; }
@@ -158,7 +213,7 @@ function App() {
             </div>
           </section>
 
-          <section className="bottom-banner"><div className="banner-icon"><ShieldCheck size={20} /></div><div><strong>Built for clarity. Designed for confidence.</strong><p>See the rate, understand the fee, and review every detail before a transfer.</p></div><button onClick={() => setNotice("Stellar testnet is selected. Real transaction support is the next implementation step.")}>How it works <ArrowUpRight size={15} /></button><div className="banner-sparkle"><Sparkles size={56} /></div></section>
+          <section className="panel onchain-panel" id="testnet-payment"><div className="onchain-heading"><div><div className="section-kicker">REAL BLOCKCHAIN · TESTNET ONLY</div><h2>Send XLM on Stellar</h2><p>Send test lumens through Freighter. Check every detail before signing.</p></div><div className="heading-icon"><Zap size={17} /></div></div><div className="onchain-grid"><div className="onchain-balance"><span>CONNECTED ACCOUNT BALANCE</span><strong>{walletConnected ? (balanceLoading ? "Loading…" : xlmBalance === null ? "Unavailable" : `${Number(xlmBalance).toLocaleString("en-US", { maximumFractionDigits: 7 })} XLM`) : "Connect wallet first"}</strong><button disabled={!walletConnected || balanceLoading} onClick={() => walletAddress && void loadXlmBalance(walletAddress)}><RefreshCw size={13} /> Refresh balance</button></div><div className="onchain-fields"><label className="field-label" htmlFor="xlm-amount">AMOUNT IN XLM</label><input id="xlm-amount" className="onchain-input" inputMode="decimal" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} placeholder="1.0000000" /><label className="field-label" htmlFor="xlm-recipient">RECIPIENT PUBLIC ADDRESS</label><input id="xlm-recipient" className="onchain-input" value={paymentDestination} onChange={e => setPaymentDestination(e.target.value.trimStart())} placeholder="G... Stellar address" autoComplete="off" spellCheck={false} /><button className="primary-transfer onchain-submit" disabled={paymentBusy} onClick={() => void sendTestnetPayment()}>{paymentBusy ? "Waiting for network…" : "Review & send Testnet XLM"} <ArrowUpRight size={16} /></button></div></div>{paymentHash && <div className="tx-confirmation"><Check size={16} /><div><strong>Transaction submitted</strong><a href={`https://stellar.expert/explorer/testnet/tx/${paymentHash}`} target="_blank" rel="noreferrer">View on Stellar Explorer <ArrowUpRight size={12} /></a><code>{paymentHash}</code></div></div>}<div className="secure-note"><ShieldCheck size={14} /> Testnet only. Never enter a secret key here. Freighter will request your approval.</div></section><section className="bottom-banner"><div className="banner-icon"><ShieldCheck size={20} /></div><div><strong>Built for clarity. Designed for confidence.</strong><p>See the rate, understand the fee, and review every detail before a transfer.</p></div><button onClick={() => setNotice("Stellar testnet is selected. Real transaction support is the next implementation step.")}>How it works <ArrowUpRight size={15} /></button><div className="banner-sparkle"><Sparkles size={56} /></div></section>
           <footer className="footer"><span>© 2026 CrossBorder Labs</span><span><span className="footer-dot" /> Demo mode · Stellar-inspired experience</span><button onClick={() => setNotice("CrossBorder is a prototype. It is not a bank, money transmitter, or fiat payout service.")}>Important information</button></footer>
         </div>
       </main>
