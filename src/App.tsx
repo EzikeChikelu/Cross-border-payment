@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { isConnected, requestAccess } from "@stellar/freighter-api";
 import {
   ArrowDownLeft, ArrowDownUp, ArrowLeftRight, ArrowUpRight, Bell, Check,
   ChevronDown, CircleHelp, Globe2, LayoutDashboard,
@@ -30,6 +31,7 @@ function App() {
   const [showRecipient, setShowRecipient] = useState(false);
   const [notice, setNotice] = useState("");
   const [walletConnected, setWalletConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState("");
   const [mobileNav, setMobileNav] = useState(false);
   const [activityFilter, setActivityFilter] = useState("All activity");
   const [showAll, setShowAll] = useState(false);
@@ -52,9 +54,24 @@ function App() {
     if (!recipient.trim()) { setShowRecipient(true); setNotice("Add the recipient's destination address to continue."); return; }
     setNotice("Demo quote ready. No funds have been moved. Stellar transaction signing is not enabled yet.");
   };
-  const connectWallet = () => {
-    setWalletConnected(true);
-    setNotice("Demo wallet session enabled. This does not connect a real wallet or authorize transactions.");
+  const connectWallet = async () => {
+    try {
+      const connection = await isConnected();
+      if (!connection.isConnected) {
+        setNotice("Freighter was not detected. Install the Stellar Freighter wallet extension, then try again.");
+        return;
+      }
+      const access = await requestAccess();
+      if (access.error || !access.address) {
+        setNotice(access.error?.message || "Wallet access was not approved.");
+        return;
+      }
+      setWalletAddress(access.address);
+      setWalletConnected(true);
+      setNotice("Freighter connected successfully. Transfers remain in demo mode until transaction signing and submission are implemented.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Could not connect to Freighter. Please try again.");
+    }
   };
 
   return (
@@ -88,7 +105,7 @@ function App() {
             <div className="network-pill"><span className="network-dot" /> Testnet</div>
             <button className="icon-button" aria-label="Toggle theme" onClick={() => setDark(!dark)}>{dark ? <Sun size={18} /> : <Moon size={18} />}</button>
             <button className="icon-button notification-button" aria-label="Notifications" onClick={() => setNotice("You're all caught up. No new notifications.")}><Bell size={18} /><i /></button>
-            <button className={`connect-button ${walletConnected ? "connected" : ""}`} onClick={connectWallet}>{walletConnected ? <><Check size={16} /> Demo connected</> : <><Wallet size={16} /> Connect wallet</>}</button>
+            <button className={`connect-button ${walletConnected ? "connected" : ""}`} onClick={connectWallet}>{walletConnected ? <><Check size={16} /> {walletAddress.slice(0, 5)}…{walletAddress.slice(-4)}</> : <><Wallet size={16} /> Connect wallet</>}</button>
           </div>
         </header>
 
