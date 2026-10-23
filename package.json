@@ -9,7 +9,7 @@
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
-    "@stellar/freighter-api": "^5.0.0",
+    "@stellar/freighter-api": "^6.0.1",
     "@stellar/stellar-sdk": "^13.3.0",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
