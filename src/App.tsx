@@ -139,9 +139,12 @@ function App() {
     }
   };
   const startTransfer = () => {
-    if (!walletConnected) { setNotice("Connect a compatible Stellar wallet before preparing a transfer."); return; }
-    if (!recipient.trim()) { setShowRecipient(true); setNotice("Add the recipient's destination address to continue."); return; }
-    setNotice("Demo quote ready. No funds have been moved. Stellar transaction signing is not enabled yet.");
+    if (!walletConnected) { setNotice("Connect Freighter before preparing a transfer."); return; }
+    if (!recipient.trim()) { setShowRecipient(true); setNotice("Add a recipient address to continue."); return; }
+    const trimmedRecipient = recipient.trim();
+    if (StellarSdk.StrKey.isValidEd25519PublicKey(trimmedRecipient)) setPaymentDestination(trimmedRecipient);
+    setNotice("This is an indicative fiat quote only; it does not send money. For an actual blockchain transfer, review the XLM amount and recipient in the Stellar Testnet payment panel below.");
+    document.getElementById("testnet-payment")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
   const connectWallet = async () => {
     try {
@@ -243,7 +246,7 @@ function App() {
               <div className="activity-filters">{["All activity", "Sent", "Received"].map(filter => <button key={filter} className={activityFilter === filter ? "filter-active" : ""} onClick={() => setActivityFilter(filter)}>{filter}</button>)}</div>
               <div className="transaction-list">{shownTransactions.map((tx) => <div className="transaction" key={tx.name}><div className={`transaction-avatar ${tx.color}`}>{tx.initials}<span className={tx.kind === "received" ? "tx-type received" : "tx-type"}>{tx.kind === "received" ? <ArrowDownLeft size={10} /> : <ArrowUpRight size={10} />}</span></div><div className="transaction-info"><strong>{tx.name}</strong><span>{tx.detail}</span></div><div className="transaction-amount"><strong className={tx.kind === "received" ? "positive" : ""}>{tx.amount}</strong><span className={tx.status === "Completed" ? "status-complete" : "status-pending"}><i />{tx.status}</span></div></div>)}</div>
               {shownTransactions.length === 0 && <div className="empty-state">No transactions in this category yet.</div>}
-              <div className="activity-footer"><span><span className="network-dot" /> Showing sample activity</span><button onClick={() => setNotice("Live on-chain activity will appear here once Stellar Horizon integration is implemented.")}>Explore activity <ArrowUpRight size={14} /></button></div>
+              <div className="activity-footer"><span><span className="network-dot" /> Showing sample activity</span><button onClick={() => { document.getElementById("testnet-payment")?.scrollIntoView({ behavior: "smooth", block: "start" }); setNotice("Live Stellar Testnet activity is available in the on-chain payment panel. Connect Freighter to view your account history."); }}>Explore activity <ArrowUpRight size={14} /></button></div>
             </div>
           </section>
 
