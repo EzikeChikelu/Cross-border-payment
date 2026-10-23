@@ -4,7 +4,7 @@
 
 CrossBorder is an early-stage cross-border payment experience built around the Stellar network. It combines a polished transfer interface, indicative conversion previews, recipient details, and a real Freighter wallet authorization flow.
 
-> **Prototype only:** Do not use for real funds. The exchange rates, fees, balances, and activity shown in the interface are illustrative demo data. The app can request Freighter access, read a public address and Testnet balance, and submit native XLM payments to Stellar Testnet after explicit wallet signing. Transaction confirmation polling, production FX, and fiat payouts are not yet implemented. Fiat payouts and production FX require appropriate providers, compliance controls, and security review.
+> **Prototype only:** Do not use for real funds. The exchange rates, fees, balances, and activity shown in the interface are illustrative demo data. The app can request Freighter access, read a public address and Testnet balance, submit native XLM payments to Stellar Testnet after explicit wallet signing, and retrieve recent native XLM payment operations from Horizon. A successful Horizon submission response is shown as confirmed; production FX and fiat payouts are not implemented. Fiat payouts and production FX require appropriate providers, compliance controls, and security review.
 
 ## Current features
 
@@ -15,7 +15,8 @@ CrossBorder is an early-stage cross-border payment experience built around the S
 - Live Stellar Testnet native XLM balance lookup after wallet connection
 - Testnet XLM payment builder with public-address validation and amount validation
 - Explicit Freighter transaction-signing approval before submission
-- Horizon Testnet submission and transaction explorer link
+- Horizon Testnet submission with confirmation status and transaction explorer link
+- Live recent native XLM payment history for the connected account, with sent/received direction and explorer links
 - Wallet public address shown after connection
 - Sample activity feed with sent/received filters
 - Stellar Testnet environment labeling and safety messaging
@@ -25,9 +26,9 @@ CrossBorder is an early-stage cross-border payment experience built around the S
 1. [x] Establish the frontend shell and design system.
 2. [x] Build the transfer quote and recipient flow.
 3. [x] Connect to Freighter and request access to the user's public address.
-4. [ ] Add Stellar Testnet account lookup and balance display.
-5. [ ] Build a native Stellar payment transaction, request explicit wallet signing, and submit to Testnet.
-6. [ ] Verify transaction status from the network and populate real transaction history.
+4. [x] Add Stellar Testnet account lookup and balance display.
+5. [x] Build a native Stellar payment transaction, request explicit wallet signing, and submit to Testnet.
+6. [x] Show successful Horizon submissions as confirmed and populate recent native XLM payment history from account operations.
 7. [ ] Evaluate compliant providers for real-world fiat conversion and payouts.
 
 ## Local development
