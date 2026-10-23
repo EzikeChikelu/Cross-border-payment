@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import {
   ArrowDownLeft, ArrowDownUp, ArrowLeftRight, ArrowUpRight, Bell, Check,
-  ChevronDown, CircleHelp, Clock3, CreditCard, Globe2, LayoutDashboard,
-  Menu, Moon, MoreHorizontal, Plus, RefreshCw, Send, Settings2, ShieldCheck,
+  ChevronDown, CircleHelp, Globe2, LayoutDashboard,
+  Menu, Moon, MoreHorizontal, RefreshCw, Send, Settings2, ShieldCheck,
   Sparkles, Sun, Wallet, X, Zap
 } from "lucide-react";
 
@@ -30,7 +30,6 @@ function App() {
   const [showRecipient, setShowRecipient] = useState(false);
   const [notice, setNotice] = useState("");
   const [walletConnected, setWalletConnected] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const [activityFilter, setActivityFilter] = useState("All activity");
   const [showAll, setShowAll] = useState(false);
@@ -136,7 +135,7 @@ function App() {
             <div className="panel activity-panel">
               <div className="activity-heading"><div><div className="section-kicker">YOUR MONEY IN MOTION</div><h2>Recent activity</h2></div><button className="view-all" onClick={() => { setShowAll(!showAll); setActive("Activity"); }}>{showAll ? "Show less" : "View all"} <ArrowUpRight size={14} /></button></div>
               <div className="activity-filters">{["All activity", "Sent", "Received"].map(filter => <button key={filter} className={activityFilter === filter ? "filter-active" : ""} onClick={() => setActivityFilter(filter)}>{filter}</button>)}</div>
-              <div className="transaction-list">{shownTransactions.map((tx, index) => <div className="transaction" key={tx.name}><div className={`transaction-avatar ${tx.color}`}>{tx.initials}<span className={tx.kind === "received" ? "tx-type received" : "tx-type"}>{tx.kind === "received" ? <ArrowDownLeft size={10} /> : <ArrowUpRight size={10} />}</span></div><div className="transaction-info"><strong>{tx.name}</strong><span>{tx.detail}</span></div><div className="transaction-amount"><strong className={tx.kind === "received" ? "positive" : ""}>{tx.amount}</strong><span className={tx.status === "Completed" ? "status-complete" : "status-pending"}><i />{tx.status}</span></div></div>)}</div>
+              <div className="transaction-list">{shownTransactions.map((tx) => <div className="transaction" key={tx.name}><div className={`transaction-avatar ${tx.color}`}>{tx.initials}<span className={tx.kind === "received" ? "tx-type received" : "tx-type"}>{tx.kind === "received" ? <ArrowDownLeft size={10} /> : <ArrowUpRight size={10} />}</span></div><div className="transaction-info"><strong>{tx.name}</strong><span>{tx.detail}</span></div><div className="transaction-amount"><strong className={tx.kind === "received" ? "positive" : ""}>{tx.amount}</strong><span className={tx.status === "Completed" ? "status-complete" : "status-pending"}><i />{tx.status}</span></div></div>)}</div>
               {shownTransactions.length === 0 && <div className="empty-state">No transactions in this category yet.</div>}
               <div className="activity-footer"><span><span className="network-dot" /> Showing sample activity</span><button onClick={() => setNotice("Live on-chain activity will appear here once Stellar Horizon integration is implemented.")}>Explore activity <ArrowUpRight size={14} /></button></div>
             </div>
