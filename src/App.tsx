@@ -78,14 +78,14 @@ function App() {
     if (!walletConnected || !walletAddress) { setNotice("Connect Freighter before sending a Testnet payment."); return; }
     if (!StellarSdk.StrKey.isValidEd25519PublicKey(paymentDestination.trim())) { setNotice("Enter a valid Stellar public address beginning with G."); return; }
     const parsedAmount = Number(paymentAmount);
-    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0 || !/^\\d+(\\.\\d{1,7})?$/.test(paymentAmount.trim())) { setNotice("Enter an XLM amount greater than zero with up to 7 decimal places."); return; }
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0 || !/^\d+(\.\d{1,7})?$/.test(paymentAmount.trim())) { setNotice("Enter an XLM amount greater than zero with up to 7 decimal places."); return; }
     if (paymentDestination.trim() === walletAddress) { setNotice("Choose a different recipient address."); return; }
     setPaymentBusy(true);
     try {
       const server = new StellarSdk.Horizon.Server("https://horizon-testnet.stellar.org");
       const account = await server.loadAccount(walletAddress);
       const tx = new StellarSdk.TransactionBuilder(account, { fee: StellarSdk.BASE_FEE, networkPassphrase: StellarSdk.Networks.TESTNET })
-        .addOperation(StellarSdk.Operation.payment({ destination: paymentDestination.trim(), asset: StellarSdk.Asset.native(), amount: parsedAmount.toFixed(7).replace(/\\.?0+$/, "") }))
+        .addOperation(StellarSdk.Operation.payment({ destination: paymentDestination.trim(), asset: StellarSdk.Asset.native(), amount: parsedAmount.toFixed(7).replace(/\.?0+$/, "") }))
         .setTimeout(60)
         .build();
       setNotice("Review the payment details in Freighter. Nothing is submitted until you approve signing.");
